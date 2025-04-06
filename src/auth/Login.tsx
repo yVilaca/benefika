@@ -10,9 +10,22 @@ import {
   Title,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
+import { notifications } from "@mantine/notifications";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
+import { useState } from "react";
 
 export default function Login() {
+  interface DecodedToken {
+    nome: string;
+    sobrenome: string;
+    email: string;
+    cargo: "Funcionário" | "Administrador" | "Gerente";
+    exp: number;
+    iat: number;
+  }
+  
+  const [loading, setLoading] = useState(false);
   const form = useForm({
     mode: "uncontrolled",
     initialValues: { email: "", senha: "" },
@@ -30,10 +43,42 @@ export default function Login() {
   });
 
   function login() {
-    axios.post(
-      "http://127.0.0.1:8000/api/v1/auth/login",
-      form.getTransformedValues()
-    );
+    setLoading(true);
+    axios
+      .post("http://127.0.0.1:8000/api/login/", form.getTransformedValues())
+      .then((response) => {
+        localStorage.setItem("token", response.data.access);
+        const user = jwtDecode(response.data.access);
+        localStorage.setItem("nome", (user as DecodedToken).nome);
+        localStorage.setItem("sobrenome", (user as DecodedToken).sobrenome);
+        localStorage.setItem("email", (user as DecodedToken).email);
+        localStorage.setItem("cargo", (user as DecodedToken).cargo);
+      
+        notifications.show({
+          position: "top-right",
+          title: "Login realizado com sucesso",
+          message:
+            "Que bom te ver por aqui! Você será redirecionado para a página inicial.",
+          autoClose: 2000,
+        });
+        window.location.href = "/p";
+      })
+      .catch((error) => {
+        form.setErrors({
+          email: "E-mail ou senha inválidos",
+          senha: "E-mail ou senha inválidos",
+        });
+        notifications.show({
+          position: "top-right",
+
+          title: "Erro ao realizar login",
+          message: "Verifique seu e-mail e senha",
+          color: "red",
+        });
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
 
   return (
@@ -61,7 +106,7 @@ export default function Login() {
                 {...form.getInputProps("senha")}
               />
               <Group gap={0} justify="end">
-                <Button type="submit" fullWidth>
+                <Button type="submit" fullWidth loading={loading}>
                   Entrar
                 </Button>
                 <Button variant="transparent" p={0} size="sm">
