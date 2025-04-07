@@ -11,6 +11,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
+import { IconRosetteDiscountCheckFilled } from "@tabler/icons-react";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import { useState } from "react";
@@ -21,8 +22,8 @@ export default function Login() {
     sobrenome: string;
     email: string;
     cargo: "Funcionário" | "Administrador" | "Gerente";
-    exp: number;
-    iat: number;
+    empresa: string;
+    empresa_id: string;
   }
   
   const [loading, setLoading] = useState(false);
@@ -53,6 +54,8 @@ export default function Login() {
         localStorage.setItem("sobrenome", (user as DecodedToken).sobrenome);
         localStorage.setItem("email", (user as DecodedToken).email);
         localStorage.setItem("cargo", (user as DecodedToken).cargo);
+        localStorage.setItem("empresa", (user as DecodedToken).empresa);
+        localStorage.setItem("empresa_id", (user as DecodedToken).empresa_id);
       
         notifications.show({
           position: "top-right",
@@ -63,7 +66,7 @@ export default function Login() {
         });
         window.location.href = "/p";
       })
-      .catch((error) => {
+      .catch(() => {
         form.setErrors({
           email: "E-mail ou senha inválidos",
           senha: "E-mail ou senha inválidos",
@@ -85,7 +88,7 @@ export default function Login() {
     <Center h={"100vh"}>
       <Flex direction="column" justify="center">
         <Title ta="center" order={1} c="#1c7ed6">
-          Benefika
+         <IconRosetteDiscountCheckFilled /> Benefika
         </Title>
         <Text ta="center">Seja bem-vindo de volta</Text>
         <Card miw={350} p="md" shadow="md" radius="md" mt="md">
