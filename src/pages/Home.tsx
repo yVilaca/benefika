@@ -10,6 +10,7 @@ import {
   Paper,
   Progress,
   SimpleGrid,
+  Slider,
   Stack,
   Text,
   ThemeIcon,
@@ -27,6 +28,7 @@ import {
   IconTrophy,
   IconUser,
 } from "@tabler/icons-react";
+import { modals } from "@mantine/modals";
 
 export default function Home() {
   interface Objetivo {
@@ -48,6 +50,9 @@ export default function Home() {
   const [objetivos, setObjetivos] = useState([]);
   const [objetivoEmAndamento, setObjetivoEmAndamento] = useState({});
   const [ehAdmin, setEhAdmin] = useState(false);
+  const [progresso, setProgresso] = useState(
+    (objetivoEmAndamento as Objetivo).progresso
+  );
 
   useEffect(() => {
     getObjetivos();
@@ -56,7 +61,9 @@ export default function Home() {
 
   const getObjetivos = async () => {
     await axios.get("http://127.0.0.1:8000/api/objetivos/").then((response) => {
-      setObjetivos(response.data);
+      setObjetivos(
+        response.data.filter((objetivo: Objetivo) => objetivo.aprovado != true)
+      );
       setObjetivoEmAndamento(
         response.data.filter(
           (objetivo: Objetivo) => objetivo.aprovado == true
@@ -157,7 +164,47 @@ export default function Home() {
                     {(objetivoEmAndamento as Objetivo).progresso}%
                   </Text>
                   {ehAdmin && (
-                    <ActionIcon size="sm" color="blue" variant="subtle">
+                    <ActionIcon
+                      size="sm"
+                      color="blue"
+                      variant="subtle"
+                      onClick={() => {
+                        let progressoTemp = (objetivoEmAndamento as Objetivo)
+                          .progresso;
+
+                        modals.open({
+                          centered: true,
+                          title: "Alterar Progresso",
+                          children: (
+                            <>
+                              <Text>Digite o novo progresso do objetivo:</Text>
+                              <Slider
+                                min={0}
+                                max={100}
+                                defaultValue={progressoTemp}
+                                onChange={(val) => (progressoTemp = val)}
+                              />
+                              <Button
+                                mt="md"
+                                fullWidth
+                                onClick={() => {
+                                  axios.patch(
+                                    `http://127.0.0.1:8000/api/update_objetivo/${
+                                      (objetivoEmAndamento as Objetivo).id
+                                    }/`,
+                                    {
+                                      progresso: progressoTemp,
+                                    }
+                                  );
+                                }}
+                              >
+                                Salvar
+                              </Button>
+                            </>
+                          ),
+                        });
+                      }}
+                    >
                       <IconPencil size={14} />
                     </ActionIcon>
                   )}
@@ -200,7 +247,7 @@ export default function Home() {
       <Flex gap="md">
         {objetivos.map((objetivo) => {
           return (
-            <Card p={'md'} mt="sm" shadow="md" radius="md" w="fit-content">
+            <Card p={"md"} mt="sm" shadow="md" radius="md" w="fit-content">
               <Group align="center">
                 <Text size="md" fw={600} lineClamp={1}>
                   {(objetivo as Objetivo).titulo}
@@ -228,7 +275,7 @@ export default function Home() {
                 {(objetivo as Objetivo).descricao}
               </Text>
 
-              <Flex justify={'space-between'} mt={'sm'}>
+              <Flex justify={"space-between"} mt={"sm"}>
                 <Group>
                   <IconThumbUp size={16} stroke={1.5} />
                   <Text size="sm" fw={600}>
