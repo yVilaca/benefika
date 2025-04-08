@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Card,
+  Center,
   Divider,
   Flex,
   Group,
@@ -29,6 +30,7 @@ import {
   IconUser,
 } from "@tabler/icons-react";
 import { modals } from "@mantine/modals";
+import { notifications } from "@mantine/notifications";
 
 export default function Home() {
   interface Objetivo {
@@ -51,7 +53,7 @@ export default function Home() {
   const [objetivoEmAndamento, setObjetivoEmAndamento] = useState({});
   const [ehAdmin, setEhAdmin] = useState(false);
   const [progresso, setProgresso] = useState(
-    (objetivoEmAndamento as Objetivo).progresso
+    (objetivoEmAndamento as Objetivo)?.progresso
   );
 
   useEffect(() => {
@@ -60,7 +62,12 @@ export default function Home() {
   }, []);
 
   const getObjetivos = async () => {
-    await axios.get("http://127.0.0.1:8000/api/objetivos/").then((response) => {
+    await axios.get("http://127.0.0.1:8000/api/objetivos/",                                   {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'application/json'
+      }
+    }).then((response) => {
       setObjetivos(
         response.data.filter((objetivo: Objetivo) => objetivo.aprovado != true)
       );
@@ -101,7 +108,9 @@ export default function Home() {
           <Divider />
         </Box>
 
-        <Card shadow="sm" padding="lg" radius="md">
+        {objetivoEmAndamento ? (
+
+          <Card shadow="sm" padding="lg" radius="md">
           <Stack gap="md">
             <Stack gap={4}>
               <Text
@@ -109,11 +118,11 @@ export default function Home() {
                 fw={700}
                 variant="gradient"
                 gradient={{ from: "blue", to: "cyan", deg: 90 }}
-              >
-                {(objetivoEmAndamento as Objetivo).titulo}
+                >
+                {(objetivoEmAndamento as Objetivo)?.titulo}
               </Text>
               <Text c="dimmed" size="sm" maw={500}>
-                {(objetivoEmAndamento as Objetivo).descricao}
+                {(objetivoEmAndamento as Objetivo)?.descricao}
               </Text>
             </Stack>
 
@@ -121,13 +130,13 @@ export default function Home() {
               <Badge
                 color={status === "Em Andamento" ? "blue" : "green"}
                 size="md"
-              >
-                {(objetivoEmAndamento as Objetivo).status}
+                >
+                {(objetivoEmAndamento as Objetivo)?.status}
               </Badge>
               <Group gap={6}>
                 <IconThumbUp size={16} stroke={1.5} />
                 <Text size="sm" fw={500}>
-                  {(objetivoEmAndamento as Objetivo).votos} votos
+                  {(objetivoEmAndamento as Objetivo)?.votos} votos
                 </Text>
               </Group>
             </Group>
@@ -140,7 +149,7 @@ export default function Home() {
                 <Text span fw={500}>
                   Criado por:{" "}
                 </Text>
-                {(objetivoEmAndamento as Objetivo).criado_por || "Anônimo"}
+                {(objetivoEmAndamento as Objetivo)?.criado_por || "Anônimo"}
               </Text>
             </Group>
 
@@ -150,7 +159,7 @@ export default function Home() {
                 <Text span fw={500}>
                   Data:{" "}
                 </Text>
-                {formatData((objetivoEmAndamento as Objetivo).data_criacao)}
+                {formatData((objetivoEmAndamento as Objetivo)?.data_criacao)}
               </Text>
             </Group>
 
@@ -161,29 +170,28 @@ export default function Home() {
                 </Text>
                 <Group gap={4}>
                   <Text fw={600} size="sm">
-                    {(objetivoEmAndamento as Objetivo).progresso}%
+                    {(objetivoEmAndamento as Objetivo)?.progresso}%
                   </Text>
                   {ehAdmin && (
                     <ActionIcon
-                      size="sm"
-                      color="blue"
-                      variant="subtle"
-                      onClick={() => {
-                        let progressoTemp = (objetivoEmAndamento as Objetivo)
-                          .progresso;
-
-                        modals.open({
-                          centered: true,
-                          title: "Alterar Progresso",
-                          children: (
-                            <>
+                    size="sm"
+                    color="blue"
+                    variant="subtle"
+                    onClick={() => {
+                      let progressoTemp = (objetivoEmAndamento as Objetivo)?.progresso;
+                      
+                      modals.open({
+                        centered: true,
+                        title: "Alterar Progresso",
+                        children: (
+                          <>
                               <Text>Digite o novo progresso do objetivo:</Text>
                               <Slider
                                 min={0}
                                 max={100}
                                 defaultValue={progressoTemp}
                                 onChange={(val) => (progressoTemp = val)}
-                              />
+                                />
                               <Button
                                 mt="md"
                                 fullWidth
@@ -191,51 +199,73 @@ export default function Home() {
                                   axios.patch(
                                     `http://127.0.0.1:8000/api/update_objetivo/${
                                       (objetivoEmAndamento as Objetivo).id
-                                    }/`,
-                                    {
-                                      progresso: progressoTemp,
-                                    }
-                                  );
-                                }}
-                              >
+                                      }/`,
+                                      {
+                                        progresso: progressoTemp,
+                                      },
+                                      {
+                                        headers: {
+                                          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                          'Content-Type': 'application/json'
+                                        }
+                                      }
+                                    ).then(() => {
+                                      getObjetivos();
+                                      modals.closeAll();
+                                      notifications.show({
+                                        position: "top-right",
+                                        title: "Progresso atualizado",
+                                        message: `O progresso do objetivo "${(objetivoEmAndamento as Objetivo)?.titulo}" foi atualizado para ${progressoTemp}%`
+                                      });
+                                    }).catch((error)=>{
+                                      notifications.show({
+                                        position: "top-right",
+                                        title: "Erro ao atualizar progresso",
+                                        message: error.response.data.progresso
+                                      })
+                                      console.log(error.response.data.progresso);
+                                    });
+                                  }}
+                                  >
                                 Salvar
                               </Button>
                             </>
                           ),
                         });
                       }}
-                    >
+                      >
                       <IconPencil size={14} />
                     </ActionIcon>
                   )}
                 </Group>
               </Group>
               <Progress
-                value={(objetivoEmAndamento as Objetivo).progresso}
+                value={(objetivoEmAndamento as Objetivo)?.progresso}
                 color={
-                  (objetivoEmAndamento as Objetivo).progresso < 30
-                    ? "red"
-                    : (objetivoEmAndamento as Objetivo).progresso < 70
-                    ? "yellow"
-                    : "green"
+                  (objetivoEmAndamento as Objetivo)?.progresso < 30
+                  ? "red"
+                  : (objetivoEmAndamento as Objetivo)?.progresso < 70
+                  ? "yellow"
+                  : "green"
                 }
                 size="lg"
                 radius="xl"
                 striped
                 animated
-              />
+                />
             </Box>
           </Stack>
         </Card>
+        ): <Center><Text>Sem objetivos em andamento...</Text></Center>}
 
-        {ehAdmin && (
+        {ehAdmin && objetivoEmAndamento && (
           <Group justify="right" mt="lg">
-            <Button variant="outline" color="gray">
-              Cancelar
-            </Button>
-            <Button leftSection={<IconTrophy size={20} />} color="green">
-              Concluir Objetivo
-            </Button>
+          <Button variant="outline" color="gray">
+          Cancelar
+          </Button>
+          <Button leftSection={<IconTrophy size={20} />} color="green">
+          Concluir Objetivo
+          </Button>
           </Group>
         )}
       </Card>
@@ -250,18 +280,18 @@ export default function Home() {
             <Card p={"md"} mt="sm" shadow="md" radius="md" w="fit-content">
               <Group align="center">
                 <Text size="md" fw={600} lineClamp={1}>
-                  {(objetivo as Objetivo).titulo}
+                  {(objetivo as Objetivo)?.titulo}
                 </Text>
                 <Badge
                   color={
-                    (objetivo as Objetivo).status === "Concluida"
+                    (objetivo as Objetivo)?.status === "Concluida"
                       ? "gray"
                       : "green"
                   }
                   variant="light"
                   size="md"
                 >
-                  {(objetivo as Objetivo).status}
+                  {(objetivo as Objetivo)?.status}
                 </Badge>
               </Group>
 
@@ -272,14 +302,14 @@ export default function Home() {
                 lineClamp={3}
                 style={{ minHeight: "3.6em" }}
               >
-                {(objetivo as Objetivo).descricao}
+                {(objetivo as Objetivo)?.descricao}
               </Text>
 
               <Flex justify={"space-between"} mt={"sm"}>
                 <Group>
                   <IconThumbUp size={16} stroke={1.5} />
                   <Text size="sm" fw={600}>
-                    {(objetivo as Objetivo).votos} votos
+                    {(objetivo as Objetivo)?.votos} votos
                   </Text>
                 </Group>
                 {ehAdmin && (objetivo as Objetivo).status != "Concluida" && (
