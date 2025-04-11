@@ -66,7 +66,16 @@ export default function Login() {
         });
         window.location.href = "/p";
       })
-      .catch(() => {
+      .catch((e) => {
+        if (!e.response ){
+          notifications.show({
+            position: "top-right",
+            title: "Erro ao realizar login",
+            message: "Não foi possível conectar ao servidor. Tente novamente mais tarde.",
+            color: "red",
+          });
+          return;
+        }
         form.setErrors({
           email: "E-mail ou senha inválidos",
           senha: "E-mail ou senha inválidos",

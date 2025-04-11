@@ -31,6 +31,7 @@ import {
 } from "@tabler/icons-react";
 import { modals } from "@mantine/modals";
 import { notifications } from "@mantine/notifications";
+import ObjetivoCard from "../componentes/CardObjetivo";
 
 export default function Home() {
   interface Objetivo {
@@ -277,51 +278,7 @@ export default function Home() {
       <Flex gap="md">
         {objetivos.map((objetivo) => {
           return (
-            <Card p={"md"} mt="sm" shadow="md" radius="md" w="fit-content">
-              <Group align="center">
-                <Text size="md" fw={600} lineClamp={1}>
-                  {(objetivo as Objetivo)?.titulo}
-                </Text>
-                <Badge
-                  color={
-                    (objetivo as Objetivo)?.status === "Concluida"
-                      ? "gray"
-                      : "green"
-                  }
-                  variant="light"
-                  size="md"
-                >
-                  {(objetivo as Objetivo)?.status}
-                </Badge>
-              </Group>
-
-              <Text
-                c="dimmed"
-                size="sm"
-                maw={400}
-                lineClamp={3}
-                style={{ minHeight: "3.6em" }}
-              >
-                {(objetivo as Objetivo)?.descricao}
-              </Text>
-
-              <Flex justify={"space-between"} mt={"sm"}>
-                <Group>
-                  <IconThumbUp size={16} stroke={1.5} />
-                  <Text size="sm" fw={600}>
-                    {(objetivo as Objetivo)?.votos} votos
-                  </Text>
-                </Group>
-                {ehAdmin && (objetivo as Objetivo).status != "Concluida" && (
-                  <Group justify="right">
-                    <Button size="xs" variant="light">
-                      Reprovar
-                    </Button>
-                    <Button size="xs">Aprovar</Button>
-                  </Group>
-                )}
-              </Flex>
-            </Card>
+            <ObjetivoCard objetivo={objetivo} ehAdmin={ehAdmin} />
           );
         })}
       </Flex>
