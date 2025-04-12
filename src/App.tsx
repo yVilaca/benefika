@@ -12,6 +12,7 @@ import { ModalsProvider } from "@mantine/modals";
 export default function App() {
   return (
     <MantineProvider theme={theme}>
+      <div className="App">
       <ModalsProvider>
         <Notifications />
         <BrowserRouter>
@@ -28,6 +29,7 @@ export default function App() {
           </Routes>
         </BrowserRouter>
       </ModalsProvider>
+      </div>
     </MantineProvider>
   );
 }

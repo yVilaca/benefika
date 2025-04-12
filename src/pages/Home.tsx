@@ -53,9 +53,6 @@ export default function Home() {
   const [objetivos, setObjetivos] = useState([]);
   const [objetivoEmAndamento, setObjetivoEmAndamento] = useState({});
   const [ehAdmin, setEhAdmin] = useState(false);
-  const [progresso, setProgresso] = useState(
-    (objetivoEmAndamento as Objetivo)?.progresso
-  );
 
   useEffect(() => {
     getObjetivos();
@@ -102,7 +99,7 @@ export default function Home() {
             <ThemeIcon color="yellow" size="lg" variant="light" radius="xl">
               <IconStarFilled size={20} />
             </ThemeIcon>
-            <Text size="lg" fw={700}>
+            <Text size="lg" fw={600}>
               Objetivo Em Andamento
             </Text>
           </Group>
@@ -129,7 +126,7 @@ export default function Home() {
 
             <Group justify="space-between">
               <Badge
-                color={status === "Em Andamento" ? "blue" : "green"}
+                color={(objetivoEmAndamento as Objetivo)?.status === "Aberto" ? "blue" : "green"}
                 size="md"
                 >
                 {(objetivoEmAndamento as Objetivo)?.status}
@@ -184,17 +181,25 @@ export default function Home() {
                       modals.open({
                         centered: true,
                         title: "Alterar Progresso",
+                        size:"md",
                         children: (
                           <>
-                              <Text>Digite o novo progresso do objetivo:</Text>
+                          <Group mb={'md'}>
+                              <Text>Selecione o novo progresso do objetivo:</Text>
+                              <Text size="sm" c="#333">Isso define para seus funcionários como está o andamento da meta para conclusão deste objetivo.</Text>
+                          </Group>
                               <Slider
+                                mb={'md'}
+                                w={'97%'}
                                 min={0}
                                 max={100}
                                 defaultValue={progressoTemp}
                                 onChange={(val) => (progressoTemp = val)}
+                                size={4}
                                 />
                               <Button
                                 mt="md"
+                                h={'xl'}
                                 fullWidth
                                 onClick={() => {
                                   axios.patch(

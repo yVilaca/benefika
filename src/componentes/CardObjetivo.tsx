@@ -1,7 +1,13 @@
 import { Badge, Button, Card, Flex, Group, Text } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
-import { IconThumbUp } from "@tabler/icons-react";
+import {
+  IconThumbDown,
+  IconThumbDownFilled,
+  IconThumbUp,
+  IconThumbUpFilled,
+} from "@tabler/icons-react";
 import axios from "axios";
+import { useEffect, useState } from "react";
 
 interface Props {
   objetivo: object;
@@ -9,16 +15,85 @@ interface Props {
 }
 
 export default function ObjetivoCard({ objetivo, ehAdmin }: Props) {
-  function votar(objetivo: any) {
+  const [votosFeitos, setVotosFeitos] = useState<any>([]);
+  const [refresh, setRefresh] = useState<any>([]);
+
+  useEffect(() => {
+    axios
+      .get(
+        `http://127.0.0.1:8000/api/votos/`,
+
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((response) => {
+        setVotosFeitos(response.data);
+      });
+  }, [refresh]);
+
+  function votar(objetivo: any, positivo: boolean) {
+    setRefresh(!refresh);
     if (!objetivo || objetivo.status === "Concluida") {
       return;
+    }
+
+    if (votosFeitos.some((voto: any) => voto.objetivo_id == objetivo.id)) {
+      if (
+        votosFeitos.some(
+          (voto: any) =>
+            voto.objetivo_id === (objetivo as any).id &&
+            voto.positivo == positivo
+        )
+      ){
+        axios.delete(
+          `http://127.0.0.1:8000/api/objetivo/${(objetivo as any).id}/remover_voto/`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        ).then(()=>{
+          setRefresh(!refresh);
+        })
+        setRefresh(!refresh);
+        return;
+      }
+
+      axios
+        .patch(
+          `http://127.0.0.1:8000/api/objetivo/${(objetivo as any).id}/votar/`,
+          {
+            positivo: positivo,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        )
+        .then((response) => {
+          notifications.show({
+            title: "Obrigado por votar!",
+            message: "Seu voto foi registrado com sucesso!",
+            color: "green",
+            position: "top-right",
+          });
+        });
+        setRefresh(!refresh);
+        return;
     }
 
     axios
       .post(
         `http://127.0.0.1:8000/api/objetivo/${(objetivo as any).id}/votar/`,
         {
-          positivo: true,
+          positivo: positivo,
         },
         {
           headers: {
@@ -72,9 +147,12 @@ export default function ObjetivoCard({ objetivo, ehAdmin }: Props) {
 
       <Flex justify="space-between" mt="sm">
         <Group>
-          <IconThumbUp size={16} stroke={1.5} />
+          <IconThumbUp size={16} />
           <Text size="sm" fw={600}>
-            {(objetivo as any).total_votos} votos
+            {(objetivo as any).total_votos}{" "}
+            {(objetivo as any)?.total_votos == (1 || -1)
+              ? ` Aprovação`
+              : ` Aprovações`}
           </Text>
         </Group>
         {ehAdmin && (objetivo as any).status !== "Concluida" && (
@@ -89,12 +167,38 @@ export default function ObjetivoCard({ objetivo, ehAdmin }: Props) {
         {!ehAdmin && (
           <Group justify="right">
             <Button
+              variant="light"
               size="xs"
               onClick={() => {
-                votar(objetivo as any);
+                votar(objetivo as any, true);
               }}
             >
-              Votar
+              {votosFeitos.some(
+                (voto: any) =>
+                  voto.objetivo_id === (objetivo as any).id &&
+                  voto.positivo == true
+              ) ? (
+                <IconThumbUpFilled size={20} />
+              ) : (
+                <IconThumbUp size={20} />
+              )}
+            </Button>
+            <Button
+              variant="light"
+              size="xs"
+              onClick={() => {
+                votar(objetivo as any, false);
+              }}
+            >
+              {votosFeitos.some(
+                (voto: any) =>
+                  voto.objetivo_id === (objetivo as any).id &&
+                  voto.positivo == false
+              ) ? (
+                <IconThumbDownFilled size={20} />
+              ) : (
+                <IconThumbDown size={20} />
+              )}
             </Button>
           </Group>
         )}
